@@ -1,3 +1,4 @@
+import os
 import pickle
 import math
 import argparse
@@ -33,6 +34,8 @@ class BloomFilter:
         num_files = math.ceil(self.m_size / MAX_FILE_BITS)
         if DEBUG_MODE:
             print(f"Creating {num_files} bit array files...")
+        if not os.path.isdir(BIT_FOLDER):
+            os.mkdir(BIT_FOLDER)
         for i in range(num_files):
             bits = bitarray(MAX_FILE_BITS)
             bits.setall(0)
@@ -109,7 +112,7 @@ class BloomFilter:
         return f"BloomFilter (max_elems={self.n_max_elems}, error_rate={self.e_error_rate}, size={self.m_size}, k={self.k_hash})"
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser(description="Create and Use Bloom Filter")
     parser.add_argument('arg', type=str, choices=['init', 'add', 'test_membership'], help="Basic Bloom Filter functions")
     parser.add_argument('--max_elems', type=int, help="The maximum number of elements to be added to the Bloom Filter, n")
@@ -118,7 +121,10 @@ def main():
     parser.add_argument('--test_elems', nargs='+', type=str, help="Element(s) to test membership for in the Bloom Filter")
 
     # Parse the arguments
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
 
     if args.arg == 'init' and (not args.max_elems or not args.error_rate):
         print("Need to specify max_elems and error_rate!")
@@ -141,12 +147,14 @@ def main():
         bloom = BloomFilter.deserialize()
         with ThreadPoolExecutor() as executor:
             running_tasks = {executor.submit(bloom.test_membership, elem): elem for elem in args.test_elems}
-            for running_task in running_tasks:
-                elem, res = running_task.result()
-                if res:
-                    print(f"The element {elem} is probably in the set")
-                else:
-                    print(f"The element {elem} is definitely not in the set")
+            results = [running_task.result() for running_task in running_tasks]
+        for res in results:
+            if res[1]:
+                print(f"The element {res[0]} is probably in the set")
+            else:
+                print(f"The element {res[0]} is definitely not in the set")
+        return results
+        
 
 if __name__ == "__main__":
     main()
