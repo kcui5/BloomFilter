@@ -41,10 +41,9 @@ class BloomFilter:
             bits.setall(0)
             with open(f"{BIT_FOLDER}{i}.bin", "wb") as f:
                 bits.tofile(f)
-
-    def add_elem(self, elem):
-        """Add given element to Bloom Filter"""
-        # Compute k hashes as bit positions
+    
+    def get_bit_positions(self, elem):
+        """Return the k hashes of the given elem"""
         bit_positions = []
         for i in range(self.k_hash):
             mmh3hash = mmh3.hash(elem)
@@ -54,6 +53,11 @@ class BloomFilter:
             bit_positions.append(pos)
         if DEBUG_MODE:
             print(f"Computed bit positions: {bit_positions}")
+        return bit_positions
+
+    def add_elem(self, elem):
+        """Add given element to Bloom Filter"""
+        bit_positions = self.get_bit_positions(elem)
 
         # Set those k bit positions to 1 and write-back to disk
         for pos in bit_positions:
@@ -71,15 +75,7 @@ class BloomFilter:
     
     def test_membership(self, elem):
         """Test whether the given element is in the Bloom Filter"""
-        bit_positions = []
-        for i in range(self.k_hash):
-            mmh3hash = mmh3.hash(elem)
-            sha256hash = int(sha256(elem.encode('utf-8')).hexdigest(), 16)
-            pos = mmh3hash + i*sha256hash
-            pos = pos % self.m_size
-            bit_positions.append(pos)
-        if DEBUG_MODE:
-            print(f"Computed bit positions: {bit_positions}")
+        bit_positions = self.get_bit_positions(elem)
 
         for pos in bit_positions:
             file_index = pos // MAX_FILE_BITS
@@ -120,7 +116,6 @@ def main(args=None):
     parser.add_argument('--add_elem', type=str, help="Element to add to the Bloom Filter")
     parser.add_argument('--test_elems', nargs='+', type=str, help="Element(s) to test membership for in the Bloom Filter")
 
-    # Parse the arguments
     if args is None:
         args = parser.parse_args()
     else:
