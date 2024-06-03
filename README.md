@@ -5,7 +5,7 @@ Bloom Filter with basic functionality to initialize with desired parameters,
 add elements, and concurrenty test multiple elements for membership.
 
 Initialize a Bloom Filter with:
-\`python main.py init --max_elems <INSERT MAX ELEMS> --error_rate <INSERT ERROR RATE>\`
+\`python main.py init --max_elems \<INSERT MAX ELEMS\> --error_rate <INSERT ERROR RATE>\`
 
 Add elements with:
 \`python main.py add --add_elem <INSERT ELEMENT TO ADD>\`
